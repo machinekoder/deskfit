@@ -28,6 +28,7 @@ Item {
     ColumnLayout {
         id: columnLayout
         anchors.fill: parent
+        anchors.margins: 5
 
         Item {
             width: 1
@@ -185,6 +186,13 @@ Item {
                 height: 1
                 Layout.fillWidth: true
             }
+        }
+
+        Label {
+            Layout.alignment: Qt.AlignHCenter
+            visible: deskfit.deviceStatus == DeskFit.StartingStatus
+            text: deskfit.countdown
+            font.pixelSize: 50
         }
 
         Item {
