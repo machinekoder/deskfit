@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>ConnectedPanel.qml</file>
+        <file>qtquickcontrols2.conf</file>
+        <file>live.qml</file>
+        <file>MainPanel.qml</file>
+        <file>DisconnectedPanel.qml</file>
+        <file>DiscoveryPanel.qml</file>
+    </qresource>
+</RCC>
