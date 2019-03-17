@@ -43,7 +43,7 @@ Item {
 
     Label {
       Layout.alignment: Qt.AlignHCenter
-      text: qsTr("Distance: %1km").arg(deskfit.distance.toFixed(2))
+      text: qsTr("Distance: %1 km").arg(deskfit.distance.toFixed(2))
       font.pixelSize: 30
     }
 
@@ -52,9 +52,16 @@ Item {
       text: qsTr("Calories: %1").arg(deskfit.calories)
       font.pixelSize: 30
     }
+
     Label {
       Layout.alignment: Qt.AlignHCenter
       text: qsTr("Steps: %1").arg(deskfit.steps)
+      font.pixelSize: 30
+    }
+
+    Label {
+      Layout.alignment: Qt.AlignHCenter
+      text: qsTr("Speed: %1 km/h").arg(deskfit.realSpeed)
       font.pixelSize: 30
     }
 
@@ -124,9 +131,18 @@ Item {
       Repeater {
         model: 8
         Button {
+          id: speedButton
+          property int speed: index + 1
           Layout.fillWidth: true
           text: (index + 1)
-          onClicked: deskfit.setSpeed((index + 1) * 10)
+          checked: (speed <= deskfit.speed) && (deskfit.speed < (speed + 1))
+
+          onClicked: deskfit.setSpeed(speed * 10)
+          onCheckedChanged: {
+            if (!checked) {
+              checkable = false
+            }
+          }
         }
       }
 

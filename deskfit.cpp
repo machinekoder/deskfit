@@ -1,6 +1,7 @@
 #include "deskfit.h"
 
 #include <QMetaEnum>
+#include <cmath>
 
 const std::array<double, 9> SPEED_CONVERSION{ 0.0, 0.7, 1.5, 2.4, 3.3,
     4.3, 5.2, 6.1, 7.1 };
@@ -15,7 +16,9 @@ DeskFit::DeskFit(QObject* parent)
     , m_countdown(0)
     , m_calories(0)
     , m_steps(0)
+    , m_speed(0.0)
     , m_time(0)
+    , m_realSpeed(0.0)
 {
     m_discoveryAgent = new QBluetoothDeviceDiscoveryAgent();
     m_discoveryAgent->setLowEnergyDiscoveryTimeout(5000);
@@ -42,11 +45,6 @@ DeskFit::DeskFit(QObject* parent)
             this->m_fetchStatusTimer.stop();
         }
     });
-
-    QVector<double> conversionTable;
-    conversionTable.append(0.7);
-    conversionTable.append(1.5);
-    conversionTable.append(2.4);
 }
 
 DeskFit::ConnectionStatus
@@ -249,6 +247,11 @@ int DeskFit::time() const
     return m_time;
 }
 
+double DeskFit::realSpeed() const
+{
+    return m_realSpeed;
+}
+
 void DeskFit::startDeviceDiscovery()
 {
     m_discoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
@@ -395,6 +398,13 @@ void DeskFit::updateDeviceStatus(const QByteArray& data)
     double speed = static_cast<int>(data[10]) * 0.1;
     int steps = static_cast<int>(data[12]) * 100 + static_cast<int>(data[13]);
 
+    // convert speed steps into real speed in km/h
+    int lower = std::max(0, static_cast<int>(std::floor(speed)));
+    int upper = std::min(8, static_cast<int>(std::ceil(speed)));
+    double minSpeed = SPEED_CONVERSION[static_cast<std::size_t>(lower)];
+    double maxSpeed = SPEED_CONVERSION[static_cast<std::size_t>(upper)];
+    double realSpeed = (maxSpeed - minSpeed) * (speed - static_cast<double>(lower)) + minSpeed;
+
     if (msecs != m_time) {
         m_time = msecs;
         emit timeChanged(msecs);
@@ -418,6 +428,10 @@ void DeskFit::updateDeviceStatus(const QByteArray& data)
     if (steps != m_steps) {
         m_steps = steps;
         emit stepsChanged(steps);
+    }
+    if (!qFuzzyCompare(realSpeed, m_realSpeed)) {
+        m_realSpeed = realSpeed;
+        emit realSpeedChanged(realSpeed);
     }
 }
 
