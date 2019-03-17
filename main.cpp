@@ -4,7 +4,7 @@
 
 #include "deskfit.h"
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
@@ -20,8 +20,9 @@ int main(int argc, char *argv[])
     parser.setApplicationDescription("SportsTech DeskFit DFT200 Control");
     parser.addHelpOption();
 #ifdef QT_DEBUG
-    QCommandLineOption forceOption(QStringList() << "l" << "live",
-    QCoreApplication::translate("live", "Start live coding mode."));
+    QCommandLineOption forceOption(QStringList() << "l"
+                                                 << "live",
+        QCoreApplication::translate("live", "Start live coding mode."));
     parser.addOption(forceOption);
 #endif
     parser.process(app);
@@ -39,8 +40,7 @@ int main(int argc, char *argv[])
     QFile file(QStringLiteral("./") + fileName);
     if (file.exists()) {
         engine.load(QStringLiteral("./") + fileName);
-    }
-    else {
+    } else {
         engine.load(QUrl(QStringLiteral("qrc:/") + fileName));
     }
     if (engine.rootObjects().isEmpty())

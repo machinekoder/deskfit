@@ -2,36 +2,43 @@
 
 #include <QMetaEnum>
 
-const std::array<double, 9> SPEED_CONVERSION { 0.0, 0.7, 1.5, 2.4, 3.3, 4.3, 5.2, 6.1, 7.1 };
+const std::array<double, 9> SPEED_CONVERSION{ 0.0, 0.7, 1.5, 2.4, 3.3,
+    4.3, 5.2, 6.1, 7.1 };
 
-DeskFit::DeskFit(QObject *parent) :
-    QObject(parent),
-    m_controller(nullptr),
-    m_service(nullptr),
-    m_connectionStatus(ConnectionStatus::DisconnectedStatus),
-    m_deviceStatus(DeviceStatus::StoppedStatus),
-    m_distance(0.0),
-    m_countdown(0),
-    m_calories(0),
-    m_steps(0),
-    m_time(0)
+DeskFit::DeskFit(QObject* parent)
+    : QObject(parent)
+    , m_controller(nullptr)
+    , m_service(nullptr)
+    , m_connectionStatus(ConnectionStatus::DisconnectedStatus)
+    , m_deviceStatus(DeviceStatus::StoppedStatus)
+    , m_distance(0.0)
+    , m_countdown(0)
+    , m_calories(0)
+    , m_steps(0)
+    , m_time(0)
 {
     m_discoveryAgent = new QBluetoothDeviceDiscoveryAgent();
     m_discoveryAgent->setLowEnergyDiscoveryTimeout(5000);
-    connect(m_discoveryAgent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
-            this, &DeskFit::deviceDiscovered);
-    connect(m_discoveryAgent, QOverload<QBluetoothDeviceDiscoveryAgent::Error>::of(&QBluetoothDeviceDiscoveryAgent::error),
-            this, &DeskFit::deviceScanError);
-    connect(m_discoveryAgent, &QBluetoothDeviceDiscoveryAgent::finished, this, &DeskFit::deviceScanFinished);
+    connect(m_discoveryAgent,
+        &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
+        this,
+        &DeskFit::deviceDiscovered);
+    connect(m_discoveryAgent,
+        QOverload<QBluetoothDeviceDiscoveryAgent::Error>::of(
+            &QBluetoothDeviceDiscoveryAgent::error),
+        this,
+        &DeskFit::deviceScanError);
+    connect(m_discoveryAgent,
+        &QBluetoothDeviceDiscoveryAgent::finished,
+        this,
+        &DeskFit::deviceScanFinished);
 
     m_fetchStatusTimer.setInterval(500);
     connect(&m_fetchStatusTimer, &QTimer::timeout, this, &DeskFit::fetchStatus);
-    connect(this, &DeskFit::connectionStatusChanged,
-            [this]() {
+    connect(this, &DeskFit::connectionStatusChanged, [this]() {
         if (this->m_connectionStatus == ConnectionStatus::ConnectedStatus) {
             this->m_fetchStatusTimer.start();
-        }
-        else {
+        } else {
             this->m_fetchStatusTimer.stop();
         }
     });
@@ -42,17 +49,19 @@ DeskFit::DeskFit(QObject *parent) :
     conversionTable.append(2.4);
 }
 
-DeskFit::ConnectionStatus DeskFit::connectionStatus() const
+DeskFit::ConnectionStatus
+DeskFit::connectionStatus() const
 {
     return m_connectionStatus;
 }
 
-DeskFit::DeviceStatus DeskFit::deviceStatus() const
+DeskFit::DeviceStatus
+DeskFit::deviceStatus() const
 {
     return m_deviceStatus;
 }
 
-void DeskFit::deviceDiscovered(const QBluetoothDeviceInfo &info)
+void DeskFit::deviceDiscovered(const QBluetoothDeviceInfo& info)
 {
     if (info.address() == QBluetoothAddress(m_peripheralUuid)) {
         m_deviceInfo = info;
@@ -65,12 +74,13 @@ void DeskFit::deviceDiscovered(const QBluetoothDeviceInfo &info)
 void DeskFit::deviceScanError(QBluetoothDeviceDiscoveryAgent::Error error)
 {
     if (error == QBluetoothDeviceDiscoveryAgent::PoweredOffError)
-        setUpdate("The Bluetooth adaptor is powered off, power it on before doing discovery.");
+        setUpdate("The Bluetooth adaptor is powered off, power it on before doing "
+                  "discovery.");
     else if (error == QBluetoothDeviceDiscoveryAgent::InputOutputError)
         setUpdate("Writing or reading from the device resulted in an error.");
     else {
         static QMetaEnum qme = m_discoveryAgent->metaObject()->enumerator(
-                    m_discoveryAgent->metaObject()->indexOfEnumerator("Error"));
+            m_discoveryAgent->metaObject()->indexOfEnumerator("Error"));
         setUpdate("Error: " + QLatin1String(qme.valueToKey(error)));
     }
 
@@ -89,14 +99,23 @@ void DeskFit::deviceScanFinished()
 void DeskFit::connectPeripheral()
 {
     m_controller = QLowEnergyController::createCentral(m_deviceInfo);
-    connect(m_controller, &QLowEnergyController::connected,
-            this, &DeskFit::deviceConnected);
-    connect(m_controller, QOverload<QLowEnergyController::Error>::of(&QLowEnergyController::error),
-            this, &DeskFit::errorReceived);
-    connect(m_controller, &QLowEnergyController::disconnected,
-            this, &DeskFit::deviceDisconnected);
-    connect(m_controller, &QLowEnergyController::discoveryFinished,
-            this, &DeskFit::serviceScanDone);
+    connect(m_controller,
+        &QLowEnergyController::connected,
+        this,
+        &DeskFit::deviceConnected);
+    connect(
+        m_controller,
+        QOverload<QLowEnergyController::Error>::of(&QLowEnergyController::error),
+        this,
+        &DeskFit::errorReceived);
+    connect(m_controller,
+        &QLowEnergyController::disconnected,
+        this,
+        &DeskFit::deviceDisconnected);
+    connect(m_controller,
+        &QLowEnergyController::discoveryFinished,
+        this,
+        &DeskFit::serviceScanDone);
 
     m_controller->setRemoteAddressType(QLowEnergyController::RandomAddress);
     m_controller->connectToDevice();
@@ -112,7 +131,7 @@ void DeskFit::deviceConnected()
     qDebug() << "device connected";
 }
 
-void DeskFit::errorReceived(QLowEnergyController::Error  /*error*/)
+void DeskFit::errorReceived(QLowEnergyController::Error /*error*/)
 {
     qWarning() << "Error: " << m_controller->errorString();
     setUpdate(QString("Back\n(%1)").arg(m_controller->errorString()));
@@ -120,11 +139,16 @@ void DeskFit::errorReceived(QLowEnergyController::Error  /*error*/)
 
 void DeskFit::serviceScanDone()
 {
-    m_service = m_controller->createServiceObject(QBluetoothUuid(QStringLiteral("{0000fff0-0000-1000-8000-00805f9b34fb}")));
-    connect(m_service, &QLowEnergyService::stateChanged,
-                    this, &DeskFit::serviceDetailsDiscovered);
-    connect(m_service, &QLowEnergyService::characteristicChanged,
-            this, &DeskFit::characteristicChanged);
+    m_service = m_controller->createServiceObject(
+        QBluetoothUuid(QStringLiteral("{0000fff0-0000-1000-8000-00805f9b34fb}")));
+    connect(m_service,
+        &QLowEnergyService::stateChanged,
+        this,
+        &DeskFit::serviceDetailsDiscovered);
+    connect(m_service,
+        &QLowEnergyService::characteristicChanged,
+        this,
+        &DeskFit::characteristicChanged);
     m_service->discoverDetails();
 }
 
@@ -142,17 +166,20 @@ void DeskFit::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
         // in case the service discovery failed
         // We have to queue the signal up to give UI time to even enter
         // the above mode
-//        if (newState != QLowEnergyService::DiscoveringServices) {
-//            QMetaObject::invokeMethod(this, "characteristicsUpdated",
-//                                      Qt::QueuedConnection);
-//        }
+        //        if (newState != QLowEnergyService::DiscoveringServices) {
+        //            QMetaObject::invokeMethod(this, "characteristicsUpdated",
+        //                                      Qt::QueuedConnection);
+        //        }
         return;
     }
 
-    m_command = m_service->characteristic(QBluetoothUuid(QStringLiteral("{0000fff2-0000-1000-8000-00805f9b34fb}")));
+    m_command = m_service->characteristic(
+        QBluetoothUuid(QStringLiteral("{0000fff2-0000-1000-8000-00805f9b34fb}")));
 
-    m_status = m_service->characteristic(QBluetoothUuid(QStringLiteral("{0000fff1-0000-1000-8000-00805f9b34fb}")));
-    auto notification = m_status.descriptor(QBluetoothUuid(QStringLiteral("{00002902-0000-1000-8000-00805f9b34fb}")));
+    m_status = m_service->characteristic(
+        QBluetoothUuid(QStringLiteral("{0000fff1-0000-1000-8000-00805f9b34fb}")));
+    auto notification = m_status.descriptor(
+        QBluetoothUuid(QStringLiteral("{00002902-0000-1000-8000-00805f9b34fb}")));
     m_service->writeDescriptor(notification, QByteArray::fromHex("0100"));
 
     m_connectionStatus = ConnectionStatus::ConnectedStatus;
@@ -161,7 +188,8 @@ void DeskFit::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
     qDebug() << "fully connected";
 }
 
-void DeskFit::characteristicChanged(const QLowEnergyCharacteristic &characteristic, const QByteArray &newValue)
+void DeskFit::characteristicChanged(const QLowEnergyCharacteristic& characteristic,
+    const QByteArray& newValue)
 {
     if (characteristic != m_status) {
         return;
@@ -177,17 +205,20 @@ void DeskFit::characteristicChanged(const QLowEnergyCharacteristic &characterist
     updateDeviceStatus(newValue);
 }
 
-QString DeskFit::peripheralUuid() const
+QString
+DeskFit::peripheralUuid() const
 {
     return m_peripheralUuid;
 }
 
-QString DeskFit::update() const
+QString
+DeskFit::update() const
 {
     return m_update;
 }
 
-double DeskFit::distance() const
+double
+DeskFit::distance() const
 {
     return m_distance;
 }
@@ -207,7 +238,8 @@ int DeskFit::steps() const
     return m_steps;
 }
 
-double DeskFit::speed() const
+double
+DeskFit::speed() const
 {
     return m_speed;
 }
@@ -216,7 +248,6 @@ int DeskFit::time() const
 {
     return m_time;
 }
-
 
 void DeskFit::startDeviceDiscovery()
 {
@@ -244,10 +275,9 @@ void DeskFit::disconnectDevice()
 
     m_connectionStatus = ConnectionStatus::DisconnectedStatus;
     emit connectionStatusChanged();
-
 }
 
-void DeskFit::setPeripheralUuid(const QString &peripheralUuid)
+void DeskFit::setPeripheralUuid(const QString& peripheralUuid)
 {
     if (m_peripheralUuid == peripheralUuid)
         return;
@@ -272,7 +302,6 @@ void DeskFit::stop()
         return;
     }
     m_service->writeCharacteristic(m_command, createCommand(Command::Stop));
-
 }
 
 void DeskFit::pause()
@@ -290,7 +319,10 @@ void DeskFit::setSpeed(int level)
         qWarning() << "device not connected";
         return;
     }
-    m_service->writeCharacteristic(m_command, createCommand(Command::SetSpeed, static_cast<quint8>(qMin(qMax(level, 0), 80))));
+    m_service->writeCharacteristic(
+        m_command,
+        createCommand(Command::SetSpeed,
+            static_cast<quint8>(qMin(qMax(level, 0), 80))));
 }
 
 void DeskFit::fetchStatus()
@@ -299,10 +331,12 @@ void DeskFit::fetchStatus()
         qWarning() << "device not connected";
         return;
     }
-    m_service->writeCharacteristic(m_command, createCommand(Command::FetchStatus));
+    m_service->writeCharacteristic(m_command,
+        createCommand(Command::FetchStatus));
 }
 
-QByteArray DeskFit::createCommand(const DeskFit::Command command, quint8 value)
+QByteArray
+DeskFit::createCommand(const DeskFit::Command command, quint8 value)
 {
     QByteArray data;
 
@@ -313,7 +347,7 @@ QByteArray DeskFit::createCommand(const DeskFit::Command command, quint8 value)
 
     // calculate checksum
     quint32 total = 0u;
-    for (const char c: data) {
+    for (const char c : data) {
         total += static_cast<quint32>(c);
     }
     data.append(static_cast<char>(total & 0xFFu));
@@ -321,7 +355,7 @@ QByteArray DeskFit::createCommand(const DeskFit::Command command, quint8 value)
     return data;
 }
 
-void DeskFit::updateDeviceStatus(const QByteArray &data)
+void DeskFit::updateDeviceStatus(const QByteArray& data)
 {
     char statusByte = data[14];
     DeviceStatus status;
@@ -351,8 +385,7 @@ void DeskFit::updateDeviceStatus(const QByteArray &data)
     int countdown = 0;
     if (status == DeviceStatus::UnknownStatus) {
         return;
-    }
-    else if (status == DeviceStatus::StartingStatus) {
+    } else if (status == DeviceStatus::StartingStatus) {
         countdown = static_cast<int>(data[16]);
     }
 
@@ -366,7 +399,7 @@ void DeskFit::updateDeviceStatus(const QByteArray &data)
         m_time = msecs;
         emit timeChanged(msecs);
     }
-    if (!qFuzzyCompare(km,m_distance)) {
+    if (!qFuzzyCompare(km, m_distance)) {
         m_distance = km;
         emit distanceChanged(km);
     }
@@ -388,7 +421,7 @@ void DeskFit::updateDeviceStatus(const QByteArray &data)
     }
 }
 
-void DeskFit::setUpdate(const QString &update)
+void DeskFit::setUpdate(const QString& update)
 {
     if (m_update == update)
         return;

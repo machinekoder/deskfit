@@ -1,16 +1,15 @@
 #ifndef DESKFIT_H
 #define DESKFIT_H
 
-#include <QObject>
-#include <QTimer>
-#include <QTime>
 #include <QBluetoothDeviceDiscoveryAgent>
 #include <QBluetoothDeviceInfo>
 #include <QLowEnergyController>
 #include <QLowEnergyService>
+#include <QObject>
+#include <QTime>
+#include <QTimer>
 
-class DeskFit : public QObject
-{
+class DeskFit : public QObject {
     Q_OBJECT
     Q_PROPERTY(ConnectionStatus connectionStatus READ connectionStatus NOTIFY connectionStatusChanged)
     Q_PROPERTY(DeviceStatus deviceStatus READ deviceStatus NOTIFY deviceStatusChanged)
@@ -43,7 +42,7 @@ public:
         UnknownStatus
     };
 
-    explicit DeskFit(QObject *parent = nullptr);
+    explicit DeskFit(QObject* parent = nullptr);
 
     ConnectionStatus connectionStatus() const;
     DeviceStatus deviceStatus() const;
@@ -60,8 +59,8 @@ public:
 public slots:
     void startDeviceDiscovery();
     void disconnectDevice();
-    void setPeripheralUuid(const QString &peripheralUuid);
-    void setUpdate(const QString &update);
+    void setPeripheralUuid(const QString& peripheralUuid);
+    void setUpdate(const QString& update);
 
     void start();
     void stop();
@@ -71,8 +70,8 @@ public slots:
 signals:
     void connectionStatusChanged();
     void deviceStatusChanged();
-    void peripheralUuidChanged(const QString &peripheralUuid);
-    void updateChanged(const QString &update);
+    void peripheralUuidChanged(const QString& peripheralUuid);
+    void updateChanged(const QString& update);
     void distanceChanged(double distance);
     void countdownChanged(int countdown);
     void caloriesChanged(int calories);
@@ -89,9 +88,9 @@ private:
         FetchStatus = 0x00
     };
 
-    QBluetoothDeviceDiscoveryAgent *m_discoveryAgent;
-    QLowEnergyController *m_controller;
-    QLowEnergyService *m_service;
+    QBluetoothDeviceDiscoveryAgent* m_discoveryAgent;
+    QLowEnergyController* m_controller;
+    QLowEnergyService* m_service;
     QLowEnergyCharacteristic m_command;
     QLowEnergyCharacteristic m_status;
     QBluetoothDeviceInfo m_deviceInfo;
@@ -109,13 +108,13 @@ private:
     int m_time;
 
     QByteArray createCommand(const Command command, quint8 value = 0);
-    void updateDeviceStatus(const QByteArray &data);
+    void updateDeviceStatus(const QByteArray& data);
 
 private slots:
     void fetchStatus();
 
     // QBluetoothDeviceDiscoveryAgent related
-    void deviceDiscovered(const QBluetoothDeviceInfo &info);
+    void deviceDiscovered(const QBluetoothDeviceInfo& info);
     void deviceScanError(QBluetoothDeviceDiscoveryAgent::Error error);
     void deviceScanFinished();
 
@@ -128,9 +127,7 @@ private slots:
 
     // QLowEnergyService related
     void serviceDetailsDiscovered(QLowEnergyService::ServiceState newState);
-    void characteristicChanged(const QLowEnergyCharacteristic &characteristic, const QByteArray &newValue);
+    void characteristicChanged(const QLowEnergyCharacteristic& characteristic, const QByteArray& newValue);
 };
-
-
 
 #endif // DESKFIT_H
